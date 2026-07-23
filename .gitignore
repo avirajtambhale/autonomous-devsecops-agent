@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment / secrets — NEVER commit these
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# Test artefacts
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Temp files written by agents
+/tmp/
+*.tmp
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Docker
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,149 @@
+version: "3.9"
+
+services:
+
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    image: ai-code-reviewer-api:latest
+    container_name: ai_reviewer_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=production
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - GITHUB_WEBHOOK_SECRET=${GITHUB_WEBHOOK_SECRET}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - LLM_MODEL=${LLM_MODEL:-gpt-4o}
+      # Redis
+      - REDIS_URL=redis://redis:6379/0
+      - USE_REDIS_STORE=true
+      # OpenTelemetry → Jaeger
+      - OTEL_ENABLED=true
+      - OTLP_ENDPOINT=http://jaeger:4317
+      - OTEL_SERVICE_NAME=ai-code-reviewer
+      # LangSmith
+      - LANGSMITH_ENABLED=${LANGSMITH_ENABLED:-false}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:-}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-ai-code-reviewer}
+      # Tree-sitter
+      - TREESITTER_ENABLED=true
+      # Sandbox
+      - SANDBOX_IMAGE=ai-reviewer-sandbox:latest
+      - ENABLE_PATCH_GENERATION=true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../.kiro:/app/.kiro:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+      jaeger:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - reviewer_net
+
+  arq_worker:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    image: ai-code-reviewer-api:latest
+    container_name: ai_reviewer_worker
+    restart: unless-stopped
+    command: ["arq", "api.worker.WorkerSettings"]
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - OTEL_ENABLED=true
+      - OTLP_ENDPOINT=http://jaeger:4317
+      - TREESITTER_ENABLED=true
+      - SANDBOX_IMAGE=ai-reviewer-sandbox:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ../.kiro:/app/.kiro:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - reviewer_net
+
+  dashboard:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.dashboard
+    image: ai-code-reviewer-dashboard:latest
+    container_name: ai_reviewer_dashboard
+    restart: unless-stopped
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://api:8000
+      - LANGCHAIN_PROJECT=${LANGCHAIN_PROJECT:-ai-code-reviewer}
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - reviewer_net
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: ai_reviewer_redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "512mb",
+              "--maxmemory-policy", "allkeys-lru"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - reviewer_net
+
+  # Jaeger all-in-one: OTLP receiver + trace UI
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: ai_reviewer_jaeger
+    restart: unless-stopped
+    ports:
+      - "16686:16686"   # Jaeger UI
+      - "4317:4317"     # OTLP gRPC receiver
+      - "4318:4318"     # OTLP HTTP receiver
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - reviewer_net
+
+  prometheus:
+    image: prom/prometheus:v2.52.0
+    container_name: ai_reviewer_prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=15d"
+    networks:
+      - reviewer_net
+
+volumes:
+  redis_data:
+  prometheus_data:
+
+networks:
+  reviewer_net:
+    driver: bridge

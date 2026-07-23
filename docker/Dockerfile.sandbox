@@ -1,0 +1,33 @@
+# ─────────────────────────────────────────────────────────────
+# AI Code Reviewer — Sandbox Execution Image
+# This image runs Agent C's generated test suites in isolation.
+#
+# Security posture:
+#   - No network access (enforced at docker run time via --network none)
+#   - Non-root user
+#   - Minimal attack surface
+# ─────────────────────────────────────────────────────────────
+FROM python:3.11-slim
+
+# Non-root user
+RUN groupadd -r sandbox && useradd -r -g sandbox -u 1000 sandbox
+
+WORKDIR /workspace
+
+# Only test dependencies — no internet access at runtime
+RUN pip install --no-cache-dir \
+    pytest==8.2.2 \
+    pytest-cov==5.0.0 \
+    pytest-json-report==1.5.0 \
+    coverage==7.5.3
+
+RUN chown -R sandbox:sandbox /workspace
+
+USER sandbox
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Default: run tests
+CMD ["python", "-m", "pytest", "test_patch.py", "--cov=patch_module", \
+     "--cov-report=json:/workspace/coverage.json", "--tb=short", "-v"]

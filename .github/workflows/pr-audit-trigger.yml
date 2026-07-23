@@ -1,0 +1,40 @@
+name: Trigger AI Code Review on PR
+
+# This workflow fires on every PR event and calls the self-hosted
+# AI Code Reviewer webhook endpoint. For GitHub-hosted runners,
+# the API must be reachable via a public URL or GitHub Actions tunnel.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  statuses: write
+
+jobs:
+  trigger-review:
+    name: Dispatch AI Code Review
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send PR payload to AI Reviewer
+        env:
+          REVIEWER_URL: ${{ secrets.AI_REVIEWER_URL }}
+          REVIEWER_WEBHOOK_SECRET: ${{ secrets.AI_REVIEWER_WEBHOOK_SECRET }}
+        run: |
+          # Build the payload (reuse the existing GitHub event payload)
+          PAYLOAD=$(cat "$GITHUB_EVENT_PATH")
+
+          # Compute HMAC-SHA256 signature
+          SIGNATURE="sha256=$(echo -n "$PAYLOAD" | openssl dgst -sha256 -hmac "$REVIEWER_WEBHOOK_SECRET" | cut -d' ' -f2)"
+
+          # Send to AI Reviewer
+          curl -sS -X POST "$REVIEWER_URL/webhook/github" \
+            -H "Content-Type: application/json" \
+            -H "X-GitHub-Event: pull_request" \
+            -H "X-GitHub-Delivery: ${{ github.run_id }}" \
+            -H "X-Hub-Signature-256: $SIGNATURE" \
+            -d "$PAYLOAD" \
+            --fail-with-body
+
+          echo "✅ AI Code Review dispatched successfully."
