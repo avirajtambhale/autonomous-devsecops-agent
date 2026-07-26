@@ -29,9 +29,18 @@ from api.models import (
     PRAction,
     WebhookEvent,
 )
-from api.state import AuditStore, get_audit_store
-from api.telemetry import get_cost_summary, get_token_ledger, setup_telemetry
+from api.state import get_audit_store
 from agents.orchestrator import AgentOrchestrator
+
+# Telemetry is optional — import gracefully
+try:
+    from api.telemetry import get_cost_summary, get_token_ledger, setup_telemetry
+    _TELEMETRY_AVAILABLE = True
+except ImportError:
+    _TELEMETRY_AVAILABLE = False
+    def setup_telemetry(s: Any) -> None: pass  # type: ignore[misc]
+    def get_cost_summary() -> dict: return {}   # type: ignore[misc]
+    def get_token_ledger() -> list: return []   # type: ignore[misc]
 
 # ─────────────────────────────────────────────────────────────
 # Structured logging

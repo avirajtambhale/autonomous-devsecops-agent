@@ -27,7 +27,7 @@ class Settings(BaseSettings):
 
     # GitHub Integration
     github_webhook_secret: str | None = Field(default=None, description="HMAC secret for webhook validation")
-    github_token: SecretStr = Field(..., description="GitHub PAT or App token for API calls")
+    github_token: SecretStr | None = Field(default=None, description="GitHub PAT or App token for API calls")
     github_api_url: str = "https://api.github.com"
 
     # Agent / LLM Configuration

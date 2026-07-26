@@ -28,12 +28,13 @@ class GitHubClient:
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+        token = settings.github_token.get_secret_value() if settings.github_token else ""
         self._base_url = settings.github_api_url
-        self._token = settings.github_token.get_secret_value()
+        self._token = token
         self._client = httpx.AsyncClient(
             base_url=self._base_url,
             headers={
-                "Authorization": f"Bearer {self._token}",
+                "Authorization": f"Bearer {token}" if token else "",
                 "Accept": "application/vnd.github+json",
                 "X-GitHub-Api-Version": GITHUB_API_VERSION,
                 "User-Agent": "ai-code-reviewer/1.0.0",
