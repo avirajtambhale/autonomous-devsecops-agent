@@ -8,12 +8,8 @@ font = "sans serif"
 [server]
 headless = true
 port = 8501
-enableCORS = false
+enableCORS = true
 enableXsrfProtection = false
 
 [browser]
 gatherUsageStats = false
-serverAddress = "localhost"
-
-[logger]
-level = "warning"

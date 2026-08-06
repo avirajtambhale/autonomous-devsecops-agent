@@ -1,0 +1,53 @@
+# ─────────────────────────────────────────────────────────────
+# Backend / API requirements (local dev + Docker only)
+# NOT used by Streamlit Cloud.
+# Run locally: pip install -r requirements-backend.txt
+# ─────────────────────────────────────────────────────────────
+
+# Web framework
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+httpx==0.27.0
+
+# Data validation
+pydantic==2.7.2
+pydantic-settings==2.3.0
+
+# LLM clients
+openai==1.35.0
+anthropic==0.28.0
+
+# Redis + ARQ task queue
+redis==5.0.4
+arq==0.25.0
+
+# Tree-sitter (requires Rust — Linux/Mac only)
+# tree-sitter==0.22.3
+# tree-sitter-python==0.21.0
+# tree-sitter-javascript==0.21.3
+
+# OpenTelemetry
+opentelemetry-api==1.24.0
+opentelemetry-sdk==1.24.0
+opentelemetry-instrumentation-fastapi==0.45b0
+opentelemetry-instrumentation-httpx==0.45b0
+opentelemetry-exporter-otlp-proto-grpc==1.24.0
+opentelemetry-exporter-otlp-proto-http==1.24.0
+
+# LangSmith
+langsmith==0.1.77
+
+# Observability
+structlog==24.2.0
+prometheus-client==0.20.0
+
+# Dashboard
+streamlit==1.35.0
+plotly==5.22.0
+pandas==2.2.2
+altair==5.3.0
+
+# Utilities
+pyyaml==6.0.1
+python-dotenv==1.0.1
+# tiktoken — requires Rust, install manually: pip install tiktoken
