@@ -1,0 +1,9 @@
+# API server requirements (Railway / Render / Fly.io)
+# Pure-Python, no Rust/C compiler needed
+fastapi==0.111.0
+uvicorn[standard]==0.30.0
+httpx==0.27.0
+pydantic==2.7.2
+pydantic-settings==2.3.0
+structlog==24.2.0
+python-dotenv==1.0.1
