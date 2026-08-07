@@ -325,7 +325,10 @@ with st.sidebar:
 
     st.divider()
     live = _online()
-    st.success("API Online", icon="✅") if live else st.warning("API Offline", icon="⚠️")
+    if live:
+        st.success("✅ API Online")
+    else:
+        st.warning("⚠️ API Offline")
     st.caption(f"`{API_BASE_URL}`")
 
 
