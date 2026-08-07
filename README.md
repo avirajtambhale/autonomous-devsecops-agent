@@ -32,7 +32,16 @@ streamlit run dashboard/app.py
 
 **→ Opens at http://localhost:8501**
 
-Works **fully offline** with demo data — no API keys, no Docker, no config.
+Works **fully offline** with realistic demo data — no API keys, no Docker, no config.
+Shows real data automatically when the FastAPI backend is running.
+
+### Connect live data on Streamlit Cloud
+
+In **Streamlit Cloud → Manage app → Secrets**, add:
+```toml
+API_BASE_URL = "https://your-deployed-api.railway.app"
+```
+The banner turns green and all pages show live audit data.
 
 ---
 
